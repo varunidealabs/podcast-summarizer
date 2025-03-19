@@ -1,13 +1,13 @@
 import os
 from dotenv import load_dotenv
 import requests
+import streamlit as st
 
-load_dotenv()
+ENDPOINT = st.secrets["AZURE_OPENAI_ENDPOINT"]
+API_KEY = st.secrets["AZURE_OPENAI_API_KEY"]
+DEPLOYMENT = st.secrets["AZURE_OPENAI_DEPLOYMENT"]
+API_VERSION = st.secrets["AZURE_OPENAI_API_VERSION"]
 
-ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
-DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
 
 headers = {
     "Content-Type": "application/json",

@@ -7,3 +7,9 @@ gTTS
 pydub
 azure-cognitiveservices-speech
 pytube
+yt-dlp
+azure-ai-openai
+
+
+
+

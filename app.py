@@ -1,6 +1,8 @@
 import streamlit as st
 import tempfile
 import os
+import subprocess
+import sys
 from pytube import YouTube
 import requests
 import traceback
@@ -17,6 +19,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# Check if FFmpeg is installed
+def is_ffmpeg_installed():
+    try:
+        subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
 
 # Audio extraction from YouTube with progress indicator
 def extract_audio_from_youtube(url, progress_bar=None):
@@ -419,6 +429,10 @@ def main():
     st.markdown("<h1 class='centered' style='margin-bottom: 0.5rem; font-family: \"San Francisco\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; font-weight: bold;'><span style='color: #0d6efd;'>Pod</span>Snapper</h1>", unsafe_allow_html=True)
     st.markdown("<p class='centered' style='font-size: 1.2rem; margin-bottom: 2rem; color: #6c757d;'>Save time by turning hour-long podcasts into 6-minute summaries that capture only the essential points.</p>", unsafe_allow_html=True)
     
+    # Check for FFmpeg
+    if not is_ffmpeg_installed():
+        st.warning("⚠️ FFmpeg is not installed. Some features may not work properly. Please contact your administrator to install FFmpeg on this server.")
+    
     # Check if we should render the upload card or processing/results
     if not st.session_state.get("audio_path"):
         # Render the upload card interface
@@ -438,8 +452,17 @@ def main():
                 st.session_state.summary_text = summary
             
             with st.spinner("Converting summary to speech..."):
-                audio_summary_path = azure_text_to_speech(summary)
-                st.session_state.audio_summary_path = audio_summary_path
+                try:
+                    audio_summary_path = azure_text_to_speech(summary)
+                    st.session_state.audio_summary_path = audio_summary_path
+                except Exception as e:
+                    st.error(f"Error converting summary to speech: {str(e)}")
+                    st.error("This is likely due to missing FFmpeg. The text summary will still be available.")
+                    # Create a temporary file with the summary as text for download
+                    temp_text_file = tempfile.NamedTemporaryFile(delete=False, suffix='.txt')
+                    temp_text_file.write(summary.encode('utf-8'))
+                    temp_text_file.close()
+                    st.session_state.text_summary_path = temp_text_file.name
             
             st.session_state.start_processing = False
             st.rerun()
@@ -449,61 +472,95 @@ def main():
             st.error(traceback.format_exc())
             st.session_state.start_processing = False
     
-    elif st.session_state.get("summary_text") and st.session_state.get("audio_summary_path"):
+    elif st.session_state.get("summary_text"):
         # Show results section with minimal UI
         st.markdown("<h2 class='centered' style='margin: 2rem 0;'>Your Podcast Summary</h2>", unsafe_allow_html=True)
         
         # Title only
         st.markdown(f"<h3 style='text-align: center; color: #0d6efd;'>{st.session_state.podcast_title}</h3>", unsafe_allow_html=True)
         
-        # Use Streamlit's built-in audio player - this is the only player we need
-        with open(st.session_state.audio_summary_path, "rb") as audio_file:
-            audio_bytes = audio_file.read()
-        st.audio(audio_bytes, format="audio/mp3")
-        
-        # Create a container for buttons
-        col1, col2, col3 = st.columns([1, 2, 1])
-        
-        with col2:
-            # Create two buttons side by side
-            btn_col1, btn_col2 = st.columns(2)
+        # Display text summary if audio conversion failed
+        if not st.session_state.get("audio_summary_path") and st.session_state.get("summary_text"):
+            st.markdown("### Summary Text")
+            st.write(st.session_state.summary_text)
             
-            with btn_col1:
-                # Reset button
-                if st.button("Summarize Another Podcast", use_container_width=True):
-                    # Clean up files
-                    if st.session_state.get("audio_path"):
-                        force_delete_file(st.session_state.audio_path)
-                    if st.session_state.get("audio_summary_path"):
-                        force_delete_file(st.session_state.audio_summary_path)
-                    
-                    # Reset session state
-                    for key in ["audio_path", "podcast_title", "summary_text", "audio_summary_path", "start_processing"]:
-                        if key in st.session_state:
-                            del st.session_state[key]
-                    
-                    st.rerun()
+            # Text download option
+            if st.session_state.get("text_summary_path"):
+                with open(st.session_state.get("text_summary_path"), "r") as f:
+                    text_content = f.read()
+                text_b64 = base64.b64encode(text_content.encode()).decode()
+                download_text_link = f'<a href="data:text/plain;base64,{text_b64}" download="{st.session_state.podcast_title.replace(" ", "_")}_summary.txt" class="podcast-button">Download Text Summary</a>'
+                st.markdown(download_text_link, unsafe_allow_html=True)
+        
+        # Use Streamlit's built-in audio player if available
+        if st.session_state.get("audio_summary_path"):
+            with open(st.session_state.audio_summary_path, "rb") as audio_file:
+                audio_bytes = audio_file.read()
+            st.audio(audio_bytes, format="audio/mp3")
             
-            with btn_col2:
-                # Download button
-                download_link = get_download_link(st.session_state.audio_summary_path, 
-                            f"{st.session_state.podcast_title.replace(' ', '_')}_summary.mp3")
+            # Create a container for buttons
+            col1, col2, col3 = st.columns([1, 2, 1])
+            
+            with col2:
+                # Create two buttons side by side
+                btn_col1, btn_col2 = st.columns(2)
                 
-                # Style the download button to match Streamlit button
-                styled_download_link = f"""
-                <div style="display: flex; justify-content: center; width: 100%;">
-                    <a href="data:audio/mp3;base64,{download_link.split('base64,')[1].split('"')[0]}" 
-                       download="{st.session_state.podcast_title.replace(' ', '_')}_summary.mp3" 
-                       style="background-color: #F0F2F6; border: 1px solid rgba(49, 51, 63, 0.2); 
-                              border-radius: 0.25rem; color: rgb(49, 51, 63); 
-                              text-decoration: none; padding: 0.25rem 0.75rem;
-                              font-size: 14px; font-weight: 400; text-align: center;
-                              display: inline-block; width: 100%; box-sizing: border-box;">
-                        Download MP3
-                    </a>
-                </div>
-                """
-                st.markdown(styled_download_link, unsafe_allow_html=True)
+                with btn_col1:
+                    # Reset button
+                    if st.button("Summarize Another Podcast", use_container_width=True):
+                        # Clean up files
+                        if st.session_state.get("audio_path"):
+                            force_delete_file(st.session_state.audio_path)
+                        if st.session_state.get("audio_summary_path"):
+                            force_delete_file(st.session_state.audio_summary_path)
+                        if st.session_state.get("text_summary_path"):
+                            force_delete_file(st.session_state.text_summary_path)
+                        
+                        # Reset session state
+                        for key in ["audio_path", "podcast_title", "summary_text", "audio_summary_path", "text_summary_path", "start_processing"]:
+                            if key in st.session_state:
+                                del st.session_state[key]
+                        
+                        st.rerun()
+                
+                with btn_col2:
+                    # Download button
+                    download_link = get_download_link(st.session_state.audio_summary_path, 
+                                f"{st.session_state.podcast_title.replace(' ', '_')}_summary.mp3")
+                    
+                    # Extract base64 data from the download_link
+                    b64_data = download_link.split('base64,')[1].split('"')[0]
+                    
+                    # Style the download button to match Streamlit button
+                    styled_download_link = f"""
+                    <div style="display: flex; justify-content: center; width: 100%;">
+                        <a href="data:audio/mp3;base64,{b64_data}" 
+                           download="{st.session_state.podcast_title.replace(' ', '_')}_summary.mp3" 
+                           style="background-color: #F0F2F6; border: 1px solid rgba(49, 51, 63, 0.2); 
+                                  border-radius: 0.25rem; color: rgb(49, 51, 63); 
+                                  text-decoration: none; padding: 0.25rem 0.75rem;
+                                  font-size: 14px; font-weight: 400; text-align: center;
+                                  display: inline-block; width: 100%; box-sizing: border-box;">
+                            Download MP3
+                        </a>
+                    </div>
+                    """
+                    st.markdown(styled_download_link, unsafe_allow_html=True)
+        else:
+            # If no audio, only show the "Summarize Another" button
+            if st.button("Summarize Another Podcast", use_container_width=True):
+                # Clean up files
+                if st.session_state.get("audio_path"):
+                    force_delete_file(st.session_state.audio_path)
+                if st.session_state.get("text_summary_path"):
+                    force_delete_file(st.session_state.text_summary_path)
+                
+                # Reset session state
+                for key in ["audio_path", "podcast_title", "summary_text", "audio_summary_path", "text_summary_path", "start_processing"]:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                
+                st.rerun()
     
     # Call the components to render Key Features and How It Works
     render_key_features()
@@ -516,8 +573,17 @@ if __name__ == "__main__":
         st.session_state.start_processing = False
     
     # Make sure all required state variables are initialized
-    for key in ["audio_path", "podcast_title", "summary_text", "audio_summary_path"]:
+    for key in ["audio_path", "podcast_title", "summary_text", "audio_summary_path", "text_summary_path"]:
         if key not in st.session_state:
             st.session_state[key] = None
+    
+    # Create packages.txt file to ensure FFmpeg is installed on Streamlit Cloud
+    if not os.path.exists("packages.txt"):
+        try:
+            with open("packages.txt", "w") as f:
+                f.write("ffmpeg")
+            st.success("Created packages.txt to ensure FFmpeg installation on Streamlit Cloud")
+        except Exception as e:
+            st.warning(f"Could not create packages.txt: {e}")
     
     main()

@@ -417,7 +417,7 @@ def render_upload_card():
 def main():
     # Header Section
     st.markdown("<h1 class='centered' style='margin-bottom: 0.5rem; font-family: \"San Francisco\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; font-weight: bold;'><span style='color: #0d6efd;'>Pod</span>Snapper</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='centered' style='font-size: 1.2rem; margin-bottom: 2rem; color: #6c757d;'>Save time by turning hour-long podcasts into minutes summaries that capture only the essential points.</p>", unsafe_allow_html=True)
+    st.markdown("<p class='centered' style='font-size: 1.2rem; margin-bottom: 2rem; color: #6c757d;'>Save time by turning hour-long podcasts into 6-minute summaries that capture only the essential points.</p>", unsafe_allow_html=True)
     
     # Check if we should render the upload card or processing/results
     if not st.session_state.get("audio_path"):
@@ -461,25 +461,49 @@ def main():
             audio_bytes = audio_file.read()
         st.audio(audio_bytes, format="audio/mp3")
         
-        # Simple button for downloading
-        st.markdown(get_download_link(st.session_state.audio_summary_path, 
-                    f"{st.session_state.podcast_title.replace(' ', '_')}_summary.mp3"), 
-                    unsafe_allow_html=True)
+        # Create a container for buttons
+        col1, col2, col3 = st.columns([1, 2, 1])
         
-        # Simple reset button
-        if st.button("Summarize Another Podcast"):
-            # Clean up files
-            if st.session_state.get("audio_path"):
-                force_delete_file(st.session_state.audio_path)
-            if st.session_state.get("audio_summary_path"):
-                force_delete_file(st.session_state.audio_summary_path)
+        with col2:
+            # Create two buttons side by side
+            btn_col1, btn_col2 = st.columns(2)
             
-            # Reset session state
-            for key in ["audio_path", "podcast_title", "summary_text", "audio_summary_path", "start_processing"]:
-                if key in st.session_state:
-                    del st.session_state[key]
+            with btn_col1:
+                # Reset button
+                if st.button("Summarize Another Podcast", use_container_width=True):
+                    # Clean up files
+                    if st.session_state.get("audio_path"):
+                        force_delete_file(st.session_state.audio_path)
+                    if st.session_state.get("audio_summary_path"):
+                        force_delete_file(st.session_state.audio_summary_path)
+                    
+                    # Reset session state
+                    for key in ["audio_path", "podcast_title", "summary_text", "audio_summary_path", "start_processing"]:
+                        if key in st.session_state:
+                            del st.session_state[key]
+                    
+                    st.rerun()
             
-            st.rerun()
+            with btn_col2:
+                # Download button
+                download_link = get_download_link(st.session_state.audio_summary_path, 
+                            f"{st.session_state.podcast_title.replace(' ', '_')}_summary.mp3")
+                
+                # Style the download button to match Streamlit button
+                styled_download_link = f"""
+                <div style="display: flex; justify-content: center; width: 100%;">
+                    <a href="data:audio/mp3;base64,{download_link.split('base64,')[1].split('"')[0]}" 
+                       download="{st.session_state.podcast_title.replace(' ', '_')}_summary.mp3" 
+                       style="background-color: #F0F2F6; border: 1px solid rgba(49, 51, 63, 0.2); 
+                              border-radius: 0.25rem; color: rgb(49, 51, 63); 
+                              text-decoration: none; padding: 0.25rem 0.75rem;
+                              font-size: 14px; font-weight: 400; text-align: center;
+                              display: inline-block; width: 100%; box-sizing: border-box;">
+                        Download MP3
+                    </a>
+                </div>
+                """
+                st.markdown(styled_download_link, unsafe_allow_html=True)
     
     # Call the components to render Key Features and How It Works
     render_key_features()

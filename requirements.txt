@@ -6,3 +6,4 @@ requests
 gTTS
 pydub
 azure-cognitiveservices-speech
+pytube

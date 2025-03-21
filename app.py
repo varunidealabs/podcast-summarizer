@@ -426,8 +426,8 @@ def render_upload_card():
 # Main App Layout
 def main():
     # Header Section
-    st.markdown("<h1 class='centered' style='margin-bottom: 0.5rem; font-family: \"San Francisco\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; font-weight: bold;'><span style='color: #0d6efd;'>podcast</span>summarizer</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='centered' style='font-size: 1.2rem; margin-bottom: 2rem; color: #6c757d;'>Save time by turning hour-long podcasts into 6-minute summaries that capture only the essential points.</p>", unsafe_allow_html=True)
+    st.markdown("<h1 class='centered' style='margin-bottom: 0.5rem; font-family: \"San Francisco\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; font-weight: bold;'><span style='color: #0d6efd;'>podcast</span> summarizer</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='centered' style='font-size: 1.2rem; margin-bottom: 2rem; color: #6c757d;'>Save time by turning hour-long podcasts into minutes summaries that capture only the essential points.</p>", unsafe_allow_html=True)
     
     # Check for FFmpeg
     if not is_ffmpeg_installed():

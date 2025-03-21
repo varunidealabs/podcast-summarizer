@@ -34,31 +34,6 @@ def render_key_features():
         st.markdown("""
         <div style="text-align: center; padding: 1rem;">
             <div style="background-color: #e6f3ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                <span style="color: #0d6efd; font-size: 24px;">ϟ</span>
-            </div>
-            <h3 style="margin-top: 1rem;">Fast Processing</h3>
-            <p style="color: #6c757d; font-size: 14px;">Get your summarized podcast in minutes, regardless of the original length.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown("""
-        <div style="text-align: center; padding: 1rem;">
-            <div style="background-color: #e6f3ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                <span style="color: #0d6efd; font-size: 24px;">☊</span>
-            </div>
-            <h3 style="margin-top: 1rem;">Easy Playback</h3>
-            <p style="color: #6c757d; font-size: 14px;">Listen to summaries with adjustable playback speeds and convenient controls.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Row 2 of features
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown("""
-        <div style="text-align: center; padding: 1rem;">
-            <div style="background-color: #e6f3ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
                 <span style="color: #0d6efd; font-size: 24px;">☰</span>
             </div>
             <h3 style="margin-top: 1rem;">Key Points Focus</h3>
@@ -66,7 +41,7 @@ def render_key_features():
         </div>
         """, unsafe_allow_html=True)
     
-    with col2:
+    with col4:
         st.markdown("""
         <div style="text-align: center; padding: 1rem;">
             <div style="background-color: #e6f3ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
@@ -77,27 +52,6 @@ def render_key_features():
         </div>
         """, unsafe_allow_html=True)
     
-    with col3:
-        st.markdown("""
-        <div style="text-align: center; padding: 1rem;">
-            <div style="background-color: #e6f3ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                <span style="color: #0d6efd; font-size: 24px;">⤓</span>
-            </div>
-            <h3 style="margin-top: 1rem;">Download Options</h3>
-            <p style="color: #6c757d; font-size: 14px;">Save summaries as MP3 files to listen offline on any device.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown("""
-        <div style="text-align: center; padding: 1rem;">
-            <div style="background-color: #e6f3ff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                <span style="color: #0d6efd; font-size: 24px;">✴</span>
-            </div>
-            <h3 style="margin-top: 1rem;">Perfect Fidelity</h3>
-            <p style="color: #6c757d; font-size: 14px;">Enjoy high-quality audio that preserves the essence of the original content.</p>
-        </div>
-        """, unsafe_allow_html=True)
 
 def render_how_it_works():
     """Render the How It Works section"""
